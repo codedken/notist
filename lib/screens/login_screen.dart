@@ -1,152 +1,282 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../controllers/google_auth.dart';
+
+import '../controllers/auth.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+enum AuthType {
+  Login,
+  Signup,
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   int i = 0;
+  AuthType _authType = AuthType.Login;
 
-  final List<String> _sloganText = [
-    'Pen down your ideas to never forget them',
-    'Free your head from carrying a lot',
-    'Create and modify your notes with ease',
-  ];
-  AnimationController _animationController;
-  Animation<double> _opacityTransition;
+  Map<String, String> _authData = {
+    'email': '',
+    'password': '',
+  };
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 900),
-    );
+  TextEditingController _passwordController = TextEditingController();
 
-    _opacityTransition = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInSine,
-      ),
-    );
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-    awaitAnim();
-  }
+  final String _sloganText = 'Note down your ideas so you don\'t forget them';
 
-  void awaitAnim() async {
-    for (int j = 1; j < _sloganText.length; j++) {
-      await _animateText(j);
-      if (j == _sloganText.length - 1) {
-        j = -1;
-      }
+  Auth _auth = Auth();
+
+  void _saveForm() async {
+    if (_formKey.currentState!.validate()) {
+      return;
+    }
+
+    _formKey.currentState!.save();
+    if (_authType == AuthType.Login) {
+      await _auth.login(_authData['email']!, _authData['password']!);
+    } else {
+      await _auth.signUp(_authData['email']!, _authData['password']!);
     }
   }
 
-  Future<void> _animateText(int j) async {
-    await Future.delayed(Duration(milliseconds: 500), () {
-      _animationController.forward();
-    });
-    await Future.delayed(Duration(seconds: 6), () async {
-      await _awaitAnimDir();
-    });
-
-    setState(() {
-      i = j;
-    });
-  }
-
-  Future<void> _awaitAnimDir() {
-    return _animationController.reverse();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _animationController.dispose();
+  void _toggleAuth() {
+    if (_authType == AuthType.Login) {
+      _authType = AuthType.Signup;
+    } else {
+      _authType = AuthType.Login;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(
-                  top: 20.0,
-                  left: 20.0,
-                  right: 20.0,
-                ),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/cover1.png'),
-                  ),
-                ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Image.asset(
+            'assets/images/notistlogo.png',
+            height: 70.0,
+          ),
+        ),
+        title: Text(
+          'Notist',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28.0,
+            fontFamily: 'lato',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _toggleAuth();
+              });
+            },
+            child: Text(
+              _authType == AuthType.Login ? 'Create an account' : 'Login Here',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontFamily: 'lato',
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 12.0,
-                horizontal: 10.0,
-              ),
-              child: FadeTransition(
-                opacity: _opacityTransition,
-                child: Text(
-                  _sloganText[i],
-                  style: TextStyle(
-                    fontSize: 36.0,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'lato',
+          ),
+          SizedBox(width: 10.0),
+        ],
+      ),
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Column(
+              children: [
+                SizedBox(height: 40.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                  ),
+                  child: Text(
+                    _sloganText,
+                    style: TextStyle(
+                      fontSize: 30.0,
+                      color: Colors.grey[200],
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'lato',
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10.0,
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  signInWithGoogle(context);
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Continue with Google',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontFamily: 'lato',
+                SizedBox(height: 16.0),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Container(
+                      height: _authType == AuthType.Login ? 240.0 : 320.0,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(Icons.email_outlined),
+                                hintText: 'Email Address',
+                                fillColor: Colors.white,
+                                focusColor: Colors.white,
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'enter an email address';
+                                }
+                                if (!value.contains("@")) {
+                                  return 'email is not valid';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) {
+                                _authData['email'] = value!;
+                              },
+                            ),
+                            SizedBox(height: 4.0),
+                            TextFormField(
+                                controller: _passwordController,
+                                keyboardType: TextInputType.text,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.lock_outlined),
+                                  hintText: 'Password',
+                                  fillColor: Colors.white,
+                                  focusColor: Colors.white,
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'enter a password';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'password must be 6 characters or above';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _authData['password'] = value!;
+                                }),
+                            if (_authType == AuthType.Signup)
+                              SizedBox(height: 4.0),
+                            if (_authType == AuthType.Signup)
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.check_circle_outline_outlined,
+                                  ),
+                                  hintText: 'Confirm Password',
+                                  fillColor: Colors.white,
+                                  focusColor: Colors.white,
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'confirm password';
+                                  }
+                                  if (value != _passwordController.value.text) {
+                                    return 'password does not match';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            SizedBox(height: 10.0),
+                            ElevatedButton(
+                              onPressed: () {
+                                _saveForm();
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _authType == AuthType.Login
+                                        ? 'LOGIN'
+                                        : 'SUBMIT',
+                                    style: TextStyle(
+                                      fontSize: 16.0,
+                                      fontFamily: 'lato',
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.0),
+                                  Icon(
+                                    Icons.login_outlined,
+                                    size: 32.0,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all(
+                                  Colors.grey[700],
+                                ),
+                                padding: MaterialStateProperty.all(
+                                  EdgeInsets.symmetric(
+                                    vertical: 12.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(width: 10.0),
-                    Image.asset(
-                      'assets/images/googlelogo.png',
-                      width: 30.0,
-                      height: 30.0,
-                    ),
-                  ],
-                ),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.grey[700],
-                  ),
-                  padding: MaterialStateProperty.all(
-                    EdgeInsets.symmetric(
-                      vertical: 12.0,
-                    ),
                   ),
                 ),
-              ),
+                SizedBox(height: 10.0),
+                ElevatedButton(
+                  onPressed: () {
+                    signInWithGoogle(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Continue with Google',
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontFamily: 'lato',
+                        ),
+                      ),
+                      SizedBox(width: 10.0),
+                      Image.asset(
+                        'assets/images/googlelogo.png',
+                        width: 30.0,
+                        height: 30.0,
+                      ),
+                    ],
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                      Colors.grey[700],
+                    ),
+                    padding: MaterialStateProperty.all(
+                      EdgeInsets.symmetric(
+                        vertical: 12.0,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 5.0),
+              ],
             ),
-            SizedBox(height: 10.0),
-          ],
+          ),
         ),
       ),
     );

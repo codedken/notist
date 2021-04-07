@@ -8,9 +8,10 @@ GoogleSignIn googleSignIn = GoogleSignIn();
 final FirebaseAuth _auth = FirebaseAuth.instance;
 CollectionReference _users = FirebaseFirestore.instance.collection('users');
 
-Future<bool> signInWithGoogle(BuildContext context) async {
+Future<bool?> signInWithGoogle(BuildContext context) async {
   try {
-    final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
+    final GoogleSignInAccount? googleSignInAccount =
+        await googleSignIn.signIn();
     if (googleSignInAccount != null) {
       final GoogleSignInAuthentication googleSignInAuthentication =
           await googleSignInAccount.authentication;
@@ -23,7 +24,7 @@ Future<bool> signInWithGoogle(BuildContext context) async {
       final UserCredential authResult =
           await _auth.signInWithCredential(credential);
 
-      final User user = authResult.user;
+      final User user = authResult.user!;
 
       var userData = {
         'name': user.displayName,

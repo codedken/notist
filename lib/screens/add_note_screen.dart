@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/components/elevated_button.dart';
 import '../constants.dart';
 
@@ -9,17 +11,26 @@ class AddNoteScreen extends StatefulWidget {
 
 class _AddNoteScreenState extends State<AddNoteScreen> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  Map<String, String> _authData = {
+  Map<String, String?> _authData = {
     'title': '',
     'description': '',
+    'createdAt': DateTime.now().toString(),
   };
 
-  void _submitNote() {
-    if (!_formKey.currentState.validate()) {
+  CollectionReference _notes = FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .collection('notes');
+
+  void _submitNote() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    _formKey.currentState.save();
+    _formKey.currentState!.save();
+
+    await _notes.add(_authData);
+    Navigator.pop(context);
   }
 
   @override
@@ -51,29 +62,36 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         'Save',
                         style: kTextStyle.copyWith(
                           fontSize: 18,
+                          color: Colors.white,
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        _submitNote();
+                      },
                     ),
                   ],
                 ),
                 SizedBox(height: 10.0),
                 Form(
+                  key: _formKey,
                   child: Column(
                     children: [
                       TextFormField(
                         style: kTextStyle.copyWith(
                           fontSize: 28,
+                          color: Colors.white,
                         ),
+                        autocorrect: false,
                         decoration: InputDecoration(
                           hintText: 'Title',
                           border: InputBorder.none,
                         ),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         onSaved: (value) {
                           _authData['title'] = value;
                         },
                         validator: (value) {
-                          if (value.isEmpty) {
+                          if (value!.isEmpty) {
                             return 'Enter a title';
                           }
                           return null;
@@ -85,6 +103,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         child: TextFormField(
                           style: kTextStyle.copyWith(
                             fontSize: 20,
+                            color: Colors.white,
+                            fontWeight: FontWeight.normal,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Description',
@@ -95,8 +115,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                             _authData['description'] = value;
                           },
                           validator: (value) {
-                            if (value.isEmpty) {
-                              return 'Enter a description';
+                            if (value!.isEmpty) {
+                              return '';
                             }
                             return null;
                           },
