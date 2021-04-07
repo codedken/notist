@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../controllers/google_auth.dart';
 
-import '../controllers/auth.dart';
-
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -28,8 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final String _sloganText = 'Note down your ideas so you don\'t forget them';
 
-  Auth _auth = Auth();
-
   void _saveForm() async {
     if (_formKey.currentState!.validate()) {
       return;
@@ -37,10 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     _formKey.currentState!.save();
     if (_authType == AuthType.Login) {
-      await _auth.login(_authData['email']!, _authData['password']!);
-    } else {
-      await _auth.signUp(_authData['email']!, _authData['password']!);
-    }
+    } else {}
   }
 
   void _toggleAuth() {
