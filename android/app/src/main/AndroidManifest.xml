@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.notist">
+    package="com.chekslate.notist">
+   <uses-permission android:name="android.permission.INTERNET" />
    <application
         android:label="notist"
         android:icon="@mipmap/ic_launcher">
