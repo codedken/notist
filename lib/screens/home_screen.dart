@@ -110,20 +110,37 @@ class _HomeScreenState extends State<HomeScreen> {
               return Center(child: CircularProgressIndicator());
             } else {
               if (snapshot.data!.docs.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No notes yet',
-                    style: kTextStyle.copyWith(
-                      fontSize: 20.0,
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'No notes yet',
+                      style: kTextStyle.copyWith(
+                        color: Colors.white,
+                        fontSize: 20.0,
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 12.0),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddNoteScreen(),
+                          ),
+                        ).then((value) => setState(() {}));
+                      },
+                      child: Text('Start creating notes'),
+                    )
+                  ],
                 );
               }
               return ListView.builder(
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (ctx, i) {
-                  final noteDoc = snapshot.data!.docs[i].data()!;
-                  DateTime created = DateTime.parse(noteDoc['createdAt']);
+                  final Map<String, dynamic>? noteDoc =
+                      snapshot.data?.docs[i].data();
+                  DateTime created = DateTime.parse(noteDoc!['createdAt']);
                   final cardRandomColor = Colors.grey[700];
                   final formattedDate =
                       DateFormat.yMMMd().add_jm().format(created);

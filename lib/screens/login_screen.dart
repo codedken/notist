@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:notist/screens/home_screen.dart';
 import '../controllers/google_auth.dart';
+import '../controllers/auth.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -15,8 +17,13 @@ class _LoginScreenState extends State<LoginScreen> {
   int i = 0;
   AuthType _authType = AuthType.Login;
 
+  final auth = Auth();
+
+  bool _isLoading = false;
+
   Map<String, String> _authData = {
     'email': '',
+    'displayName': '',
     'password': '',
   };
 
@@ -24,16 +31,89 @@ class _LoginScreenState extends State<LoginScreen> {
 
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  final _displayNameKey = ValueKey('displayName');
+  final _passwordKey = ValueKey('password');
+
   final String _sloganText = 'Note down your ideas so you don\'t forget them';
 
   void _saveForm() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
     _formKey.currentState!.save();
+    setState(() {
+      _isLoading = true;
+    });
     if (_authType == AuthType.Login) {
-    } else {}
+      try {
+        await auth.login(_authData['email']!, _authData['password']!);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (ctx) => HomeScreen()),
+        );
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Error'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                },
+                child: Text(
+                  'Ok',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            ],
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    } else {
+      try {
+        await auth.signUp(
+          _authData['email']!,
+          _authData['password']!,
+          _authData['displayName']!,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (ctx) => HomeScreen()),
+        );
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Error'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                },
+                child: Text(
+                  'Ok',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            ],
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _toggleAuth() {
@@ -47,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -112,11 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 16.0),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Container(
-                      height: _authType == AuthType.Login ? 240.0 : 320.0,
-                      child: Form(
-                        key: _formKey,
+                  child: Form(
+                    key: _formKey,
+                    child: Scrollbar(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         child: Column(
                           children: [
                             TextFormField(
@@ -128,6 +211,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 focusColor: Colors.white,
                                 border: OutlineInputBorder(),
                               ),
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
                               validator: (value) {
                                 if (value!.isEmpty) {
                                   return 'enter an email address';
@@ -138,11 +223,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                               onSaved: (value) {
-                                _authData['email'] = value!;
+                                _authData['email'] = value!.trim();
                               },
                             ),
+                            if (_authType == AuthType.Signup)
+                              SizedBox(height: 4.0),
+                            if (_authType == AuthType.Signup)
+                              TextFormField(
+                                key: _displayNameKey,
+                                keyboardType: TextInputType.text,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.person_outlined),
+                                  hintText: 'Display Name',
+                                  fillColor: Colors.white,
+                                  focusColor: Colors.white,
+                                  border: OutlineInputBorder(),
+                                ),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'enter a display name';
+                                  }
+
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _authData['displayName'] = value!.trim();
+                                },
+                              ),
                             SizedBox(height: 4.0),
                             TextFormField(
+                                key: _passwordKey,
                                 controller: _passwordController,
                                 keyboardType: TextInputType.text,
                                 obscureText: true,
@@ -153,6 +265,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   focusColor: Colors.white,
                                   border: OutlineInputBorder(),
                                 ),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 validator: (value) {
                                   if (value!.isEmpty) {
                                     return 'enter a password';
@@ -163,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   return null;
                                 },
                                 onSaved: (value) {
-                                  _authData['password'] = value!;
+                                  _authData['password'] = value!.trim();
                                 }),
                             if (_authType == AuthType.Signup)
                               SizedBox(height: 4.0),
@@ -180,6 +294,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   focusColor: Colors.white,
                                   border: OutlineInputBorder(),
                                 ),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 validator: (value) {
                                   if (value!.isEmpty) {
                                     return 'confirm password';
@@ -208,11 +324,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 10.0),
-                                  Icon(
-                                    Icons.login_outlined,
-                                    size: 32.0,
-                                    color: Colors.grey,
-                                  ),
+                                  _isLoading
+                                      ? CircularProgressIndicator()
+                                      : Icon(
+                                          Icons.login_outlined,
+                                          size: 32.0,
+                                          color: Colors.grey,
+                                        ),
                                 ],
                               ),
                               style: ButtonStyle(
@@ -234,8 +352,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 10.0),
                 ElevatedButton(
-                  onPressed: () {
-                    signInWithGoogle(context);
+                  onPressed: () async {
+                    try {
+                      await signInWithGoogle(context);
+                    } catch (e) {
+                      print(e);
+                    }
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
