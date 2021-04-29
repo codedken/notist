@@ -55,7 +55,9 @@ Future<bool?> signInWithGoogle(BuildContext context) async {
         }
       });
     }
-  } catch (PlatformException) {
-    print('sign in not successful');
+  } on FirebaseAuthException catch (e) {
+    if (e.code == '') {}
+  } catch (e) {
+    throw ('sign in not successful');
   }
 }
