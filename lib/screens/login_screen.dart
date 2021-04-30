@@ -352,12 +352,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 10.0),
                 ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await signInWithGoogle(context);
-                    } catch (e) {
-                      print(e);
-                    }
+                  onPressed: () {
+                    // try {
+                    //   await signInWithGoogle(context);
+                    // } catch (e) {
+                    //   print(e);
+                    // }
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
