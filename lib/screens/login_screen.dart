@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notist/screens/home_screen.dart';
-import '../controllers/google_auth.dart';
+// import '../controllers/google_auth.dart';
 import '../controllers/auth.dart';
 
 class LoginScreen extends StatefulWidget {
